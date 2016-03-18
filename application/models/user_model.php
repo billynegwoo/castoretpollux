@@ -29,18 +29,20 @@ class user_model extends CI_Model
         $this->db->insert('users', $this);
     }
 
-    public function get_all_users($fields = [])
+    public function get_all_users($fields = [], $options = [])
     {
         if (count($fields) == 0) {
-            $this->db->select('username', 'email', "DATE_FORMAT(last_log, '%M %d, %Y ,%h:%m %r') as last_log");
+            $this->db->select("username ,email ,DATE_FORMAT(last_log, '%M %d, %Y ,%h:%i %p') as last_log");
         }
         foreach ($fields as $field) {
             if ($field == 'last_log') {
                 $this->db->select("DATE_FORMAT(last_log, '%M %d, %Y ,%h:%i %p') as last_log");
             } else {
                 $this->db->select($field);
-
             }
+        }
+        foreach($options as $option){
+
         }
         $this->db->order_by('last_log', 'desc');
         $this->db->order_by('LENGTH(username)', 'desc');
