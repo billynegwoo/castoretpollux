@@ -15,7 +15,9 @@ class User extends CI_Controller
     }
 
 
-    public function listUser($format,$fields,$options){
+    public function listUser(){
+        $parameters = $this->uri->uri_to_assoc();
+        echo '<pre>'.json_encode($this->user->get_all_users(['username','last_log','email'])).'</pre>';
 
     }
 }
