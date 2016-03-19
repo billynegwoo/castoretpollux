@@ -19,36 +19,46 @@ class User extends CI_Controller
     public function listUser()
     {
         $parameters = $this->uri->uri_to_assoc();
-        $data = $this->user->get_all_users();
+        $fields = ['username','last_log','password'];
+        $options = [];
         $content_type = 'application/json';
+
+        foreach ($parameters as $key => $value){
+            if($parameters[$key] === 'true')
+                array_push($fields,$key);
+            elseif($parameters[$key] === 'false'){
+                $key = array_search($key,$fields);
+              unset($fields[$key]);
+            }
+        }
+        var_dump($parameters);
         foreach ($parameters as $key => $value) {
             if ($key == 'format') {
                 $value = strtolower($value);
                 switch ($value) {
                     case'html':
                         $content_type = 'text/html';
-                        $data = $this->_build_table($data);
+                        $data = $this->_build_table($this->user->get_all_users($fields,$options));
                         break;
                     case'json':
                         $content_type = 'application/json';
-                        $data = json_encode($data);
+                        $data = json_encode($this->user->get_all_users($fields,$options));
                         break;
                     case 'xml':
                         $content_type = 'text/xml';
                         $this->xml_data = new SimpleXMLElement('<?xml version="1.0"?><data></data>');
-                        $this->_array_to_xml($data,$this->xml_data);
+                        $this->_array_to_xml($this->user->get_all_users($fields,$options),$this->xml_data);
                         $data = $this->xml_data->asXML();
                         break;
                     case 'file':
                         $content_type = 'application/octet-stream';
-                        $data = print_r($data,true);
+                        $data = print_r($this->user->get_all_users($fields,$options),true);
                         break;
 
                 }
-            }elseif($key = 'option'){
-
             }
         };
+
         $this->output->set_content_type($content_type);
         $this->output->set_output($data);
     }
