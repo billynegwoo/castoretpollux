@@ -1,99 +1,108 @@
-<?php
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-/**
- * Created by PhpStorm.
- * User: kevman
- * Date: 18/03/2016
- * Time: 11:38
- */
+
 class User extends CI_Controller
 {
 
     private $xml_data;
+
+    public $parameters;
+
+    private $fields ;
+
+    private $options = [];
+
+    private $data = [];
+
     public function __construct()
     {
         parent::__construct();
+        $this->fields = ['username', 'last_log', 'email'];
     }
 
 
     public function listUser()
     {
-        $parameters = $this->uri->uri_to_assoc();
-        $fields = ['username','last_log','password'];
-        $options = [];
-        $content_type = 'application/json';
-
-        foreach ($parameters as $key => $value){
-            if($parameters[$key] === 'true')
-                array_push($fields,$key);
-            elseif($parameters[$key] === 'false'){
-                $key = array_search($key,$fields);
-              unset($fields[$key]);
+        if(is_null($this->parameters)){
+            $this->parameters = $this->uri->uri_to_assoc();
+        };
+        foreach ($this->parameters as $key => $value) {
+            if ($this->parameters[$key] === 'true')
+                array_push($this->fields, $key);
+            elseif ($this->parameters[$key] === 'false') {
+                $key = array_search($key, $this->fields);
+                if ($key !== false) {
+                    unset($this->fields[$key]);
+                }
             }
         }
-        var_dump($parameters);
-        foreach ($parameters as $key => $value) {
+        foreach ($this->parameters as $key => $value) {
+            if ($key == 'orderby') {
+                array_push($this->options, $value);
+            }
+        }
+        $this->data = json_encode($this->user->get_all_users($this->fields, $this->options));
+        foreach ($this->parameters as $key => $value) {
             if ($key == 'format') {
                 $value = strtolower($value);
                 switch ($value) {
                     case'html':
-                        $content_type = 'text/html';
-                        $data = $this->_build_table($this->user->get_all_users($fields,$options));
+                        $this->data = $this->_build_table($this->user->get_all_users($this->fields, $this->options));
                         break;
                     case'json':
-                        $content_type = 'application/json';
-                        $data = json_encode($this->user->get_all_users($fields,$options));
+                        $this->data = json_encode($this->user->get_all_users($this->fields, $this->options));
                         break;
                     case 'xml':
-                        $content_type = 'text/xml';
                         $this->xml_data = new SimpleXMLElement('<?xml version="1.0"?><data></data>');
-                        $this->_array_to_xml($this->user->get_all_users($fields,$options),$this->xml_data);
-                        $data = $this->xml_data->asXML();
+                        $this->_array_to_xml($this->user->get_all_users($this->fields, $this->options), $this->xml_data);
+                        $this->data = $this->xml_data->asXML();
                         break;
                     case 'file':
-                        $content_type = 'application/octet-stream';
-                        $data = print_r($this->user->get_all_users($fields,$options),true);
+                        $this->data = serialize($this->user->get_all_users($this->fields, $this->options));
                         break;
 
                 }
             }
         };
-
-        $this->output->set_content_type($content_type);
-        $this->output->set_output($data);
+        return $this->data;
     }
-
 
     private function _build_table($array)
     {
-        $html = '<table>';
-        $html .= '<tr>';
-        foreach ($array[0] as $key => $value) {
-            $html .= '<th>' . $key . '</th>';
-        }
-        $html .= '</tr>';
-        foreach ($array as $key => $value) {
+        if ($array) {
+            $html = '<table>';
             $html .= '<tr>';
-            foreach ($value as $key2 => $value2) {
-                $html .= '<td>' . $value2 . '</td>';
+            foreach ($array[0] as $key => $value) {
+                $html .= '<th>' . $key . '</th>';
             }
             $html .= '</tr>';
+            foreach ($array as $key => $value) {
+                $html .= '<tr>';
+                foreach ($value as $key2 => $value2) {
+                    $html .= '<td>' . $value2 . '</td>';
+                }
+                $html .= '</tr>';
+            }
+            $html .= '</table>';
+            return $html;
+        } else {
+            return '<object></object>';
         }
-        $html .= '</table>';
-        return $html;
+
     }
 
-    private function  _array_to_xml($array,$xml_data){
+    private function  _array_to_xml($array, $xml_data)
+    {
 
-        foreach( $array as $key => $value ) {
-            if( is_array($value) ) {
-                if( is_numeric($key) ){
-                    $key = 'item'.$key;
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                if (is_numeric($key)) {
+                    $key = 'item' . $key;
                 }
                 $subnode = $xml_data->addChild($key);
-                $this->_array_to_xml($value,$subnode);
+                $this->_array_to_xml($value, $subnode);
             } else {
-                $xml_data->addChild("$key",htmlspecialchars("$value"));
+                $xml_data->addChild("$key", htmlspecialchars("$value"));
             }
         }
     }
