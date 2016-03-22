@@ -18,14 +18,9 @@ class sendmail extends User
 
     private function sendComeBack()
     {
-        /* $this->_send_mail_via_file();
-         $this->_send_mail_via_html();
-         $this->_send_mail_via_json();*/
-
-
-        $this->_save_cache('hello om a robot', 'test', 600);
-        var_dump($this->_get_cache('test'));
-        //$id = shmop_open(15062832132, "c", 0, 10);
+        $this->_send_mail_via_file();
+        $this->_send_mail_via_html();
+        $this->_send_mail_via_json();
     }
 
 
@@ -154,72 +149,6 @@ class sendmail extends User
             $this->email->message($body);
             $this->email->send();
         }
-    }
-
-    private function _save_cache($data, $name, $timeout)
-    {
-
-
-        // get id for name of cache
-        $id = shmop_open($this->_get_cache_id($name), "c", 0644, strlen(serialize($data)));
-
-        // return int for data size or boolean false for fail
-        if ($id) {
-            $this->_set_timeout($name, $timeout);
-            return shmop_write($id, serialize($data), 0);
-        } else return false;
-    }
-
-    function _get_cache($name)
-    {
-        if (!$this->_check_timeout($name)) {
-            $id = shmop_open($this->_get_cache_id($name), "c", 0644, strlen('hello im a robot'));
-
-            if ($id) $data = unserialize(shmop_read($id, 0, shmop_size($id)));
-            else return false;          // failed to load data
-
-            if ($data) {                // array retrieved
-                shmop_close();
-                return $data;
-            } else return false;          // failed to load data
-        } else return false;              // data was expired
-    }
-
-    function _get_cache_id($name)
-    {
-        $id = array('test' => 15062832132);
-        return $id[$name];
-    }
-
-    function _set_timeout($name, $int)
-    {
-        $timeout = new DateTime(date('Y-m-d H:i:s'));
-        date_add($timeout, date_interval_create_from_date_string("$int seconds"));
-        $timeout = date_format($timeout, 'YmdHis');
-
-        $id = shmop_open(100, "a", 0, 0);
-        if ($id) $tl = unserialize(shmop_read($id, 0, shmop_size($id)));
-        else $tl = array();
-        shmop_delete($id);
-        shmop_close($id);
-
-        $tl[$name] = $timeout;
-        $id = shmop_open(100, "c", 0644, strlen(serialize($tl)));
-        shmop_write($id, serialize($tl), 0);
-    }
-
-    function _check_timeout($name)
-    {
-        $now = new DateTime(date('Y-m-d H:i:s'));
-        $now = date_format($now, 'YmdHis');
-
-        $id = shmop_open(100, "a", 0, 0);
-        if ($id) $tl = unserialize(shmop_read($id, 0, shmop_size($id)));
-        else return true;
-        shmop_close($id);
-
-        $timeout = $tl[$name];
-        return (intval($now) > intval($timeout));
     }
 
 
