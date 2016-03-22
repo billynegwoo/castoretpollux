@@ -50,7 +50,7 @@ class User extends CI_Controller
                         $this->data = $this->_build_table($this->user->get_all_users($this->fields, $this->options));
                         break;
                     case'json':
-                        $this->data = json_encode($this->user->get_all_users($this->fields, $this->options));
+                        $this->data = json_encode($this->user->get_all_users($this->fields, $this->options),JSON_UNESCAPED_SLASHES);
                         break;
                     case 'xml':
                         $this->xml_data = new SimpleXMLElement('<?xml version="1.0"?><data></data>');
